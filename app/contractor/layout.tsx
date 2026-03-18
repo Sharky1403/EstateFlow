@@ -39,9 +39,7 @@ export default async function ContractorLayout({ children }: { children: React.R
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                E
-              </div>
+              <img src="/logo.png" alt="EstateFlow" className="h-8 w-auto rounded-xl" />
               <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-sidebar shadow-[0_0_5px_rgba(74,222,128,0.7)]" />
             </div>
             <div>

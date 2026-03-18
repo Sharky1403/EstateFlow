@@ -67,8 +67,7 @@ export default function VerifyPage() {
       <div className={cardClass}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-7">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">E</div>
-          <span className="font-bold text-slate-900 text-base">EstateFlow</span>
+          <img src="/logo.png" alt="EstateFlow" className="h-8 w-auto" />
         </div>
 
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">Identity Verification</h2>

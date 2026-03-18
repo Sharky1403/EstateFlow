@@ -48,10 +48,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative z-10">
         {/* Logo */}
         <div className="flex items-center gap-3 animate-fade-in">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-            E
-          </div>
-          <span className="text-white font-bold text-xl tracking-tight">EstateFlow</span>
+          <img src="/logo.png" alt="EstateFlow" className="h-10 w-auto" />
         </div>
 
         {/* Headline */}
@@ -112,8 +109,7 @@ export default function LoginPage() {
           <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.4)] p-8 border border-white/20">
             {/* Mobile logo */}
             <div className="flex items-center gap-2.5 mb-7 lg:hidden">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">E</div>
-              <span className="font-bold text-slate-900 text-lg">EstateFlow</span>
+              <img src="/logo.png" alt="EstateFlow" className="h-8 w-auto" />
             </div>
 
             <div className="mb-7">

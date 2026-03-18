@@ -45,9 +45,7 @@ export default async function LandlordLayout({ children }: { children: React.Rea
         <div className="relative px-5 pt-5 pb-4">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                E
-              </div>
+              <img src="/logo.png" alt="EstateFlow" className="h-9 w-auto rounded-xl" />
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-sidebar shadow-[0_0_6px_rgba(74,222,128,0.7)]" />
             </div>
             <div className="min-w-0">

@@ -38,9 +38,7 @@ export default async function TenantLayout({ children }: { children: React.React
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="relative">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                E
-              </div>
+              <img src="/logo.png" alt="EstateFlow" className="h-7 w-auto rounded-lg" />
               <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-sidebar shadow-[0_0_5px_rgba(74,222,128,0.7)]" />
             </div>
             <span className="font-bold text-white text-sm tracking-tight">EstateFlow</span>

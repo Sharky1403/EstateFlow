@@ -32,13 +32,7 @@ export default function RegisterPage() {
         <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.4)] p-8 border border-white/20">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-7">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg">
-              E
-            </div>
-            <div>
-              <p className="font-bold text-slate-900 text-base leading-tight">EstateFlow</p>
-              <p className="text-slate-400 text-xs">Property Management</p>
-            </div>
+            <img src="/logo.png" alt="EstateFlow" className="h-9 w-auto" />
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">Create an account</h2>
