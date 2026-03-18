@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { RenewLeaseButton } from './RenewLeaseButton'
 
 const STATUS_VARIANT: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
   active: 'green',
@@ -33,7 +34,7 @@ export default async function LandlordLeasesPage() {
   const now = new Date()
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 page-enter">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Leases</h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -124,7 +125,7 @@ export default async function LandlordLeasesPage() {
                         />
                       </td>
                       <td className="py-3 px-2">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           {lease.units?.buildings?.id && lease.units?.id && (
                             <Link
                               href={`/landlord/properties/${lease.units.buildings.id}/units/${lease.units.id}`}
@@ -132,6 +133,9 @@ export default async function LandlordLeasesPage() {
                             >
                               View Unit
                             </Link>
+                          )}
+                          {(lease.status === 'active' || lease.status === 'expired') && (
+                            <RenewLeaseButton lease={lease} />
                           )}
                           {lease.pdf_url && (
                             <a

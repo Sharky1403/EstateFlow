@@ -12,7 +12,7 @@ export default async function PropertiesPage() {
     .eq('landlord_id', user!.id)
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 page-enter">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Properties</h1>

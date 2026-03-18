@@ -61,7 +61,14 @@ export function TenantBottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 glass border-t border-white/60 shadow-[0_-1px_20px_rgba(0,0,0,0.06)]">
+    <nav
+      className="fixed bottom-0 inset-x-0 z-40"
+      style={{
+        background: 'linear-gradient(180deg, #080d1c 0%, #060b18 100%)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.3)',
+      }}
+    >
       <div className="max-w-2xl mx-auto flex h-16 items-stretch">
         {links.map((link) => {
           const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
@@ -69,18 +76,24 @@ export function TenantBottomNav() {
             <Link
               key={link.href}
               href={link.href}
-              className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold tracking-wide transition-all duration-150',
-                isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
-              )}
+              className="flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-200 relative"
             >
+              {/* Active top indicator */}
+              {isActive && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-400 rounded-b-full shadow-[0_2px_8px_rgba(59,130,246,0.8)]" />
+              )}
               <span className={cn(
-                'transition-transform duration-150',
-                isActive && 'scale-110'
+                'transition-all duration-200',
+                isActive ? 'text-blue-400 scale-110 drop-shadow-[0_0_6px_rgba(59,130,246,0.7)]' : 'text-slate-500'
               )}>
                 {link.icon(isActive)}
               </span>
-              <span>{link.label}</span>
+              <span className={cn(
+                'text-[10px] font-semibold tracking-wide transition-colors duration-200',
+                isActive ? 'text-blue-400' : 'text-slate-500'
+              )}>
+                {link.label}
+              </span>
             </Link>
           )
         })}

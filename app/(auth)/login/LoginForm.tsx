@@ -43,50 +43,51 @@ export function LoginForm() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-card">
-      <form onSubmit={onSubmit} className="space-y-5">
-        <Input
-          label="Email Address"
-          type="email"
-          placeholder="name@company.com"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
-        <Input
-          label="Password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
+    <form onSubmit={onSubmit} className="space-y-4">
+      <Input
+        label="Email Address"
+        type="email"
+        placeholder="name@company.com"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        required
+      />
+      <Input
+        label="Password"
+        type="password"
+        placeholder="••••••••"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        required
+      />
 
-        {error && (
-          <div className="p-3 rounded-xl bg-red-50 text-red-600 border border-red-200 text-sm font-medium flex items-center gap-2">
-            <span>⚠️</span> {error}
-          </div>
-        )}
-
-        <div className="pt-2">
-          <Button
-            type="submit"
-            loading={loading}
-            className="w-full"
-            variant="primary"
-            size="lg"
-          >
-            Sign In to Dashboard
-          </Button>
+      {error && (
+        <div className="p-3 rounded-xl bg-red-50 text-red-600 border border-red-200/80 text-sm font-medium flex items-center gap-2 animate-scale-in">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {error}
         </div>
+      )}
 
-        <p className="text-center text-sm text-slate-500 font-medium">
-          New here?{' '}
-          <Link href="/register" className="text-primary-600 hover:text-primary-700 hover:underline transition-colors">
-            Create an account
-          </Link>
-        </p>
-      </form>
-    </div>
+      <div className="pt-1">
+        <Button
+          type="submit"
+          loading={loading}
+          className="w-full"
+          variant="gradient"
+          size="lg"
+        >
+          Sign In to Dashboard
+        </Button>
+      </div>
+
+      <p className="text-center text-sm text-slate-500">
+        New here?{' '}
+        <Link href="/register" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">
+          Create an account
+        </Link>
+      </p>
+    </form>
   )
 }

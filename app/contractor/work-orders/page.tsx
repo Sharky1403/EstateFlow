@@ -14,7 +14,7 @@ export default async function ContractorWorkOrdersPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 page-enter">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Work Orders</h1>
         <p className="text-sm text-slate-500 mt-1">Jobs assigned to you from property managers.</p>

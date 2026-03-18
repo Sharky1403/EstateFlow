@@ -22,7 +22,7 @@ export default async function CommunicationPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
+    <div className="max-w-6xl mx-auto page-enter">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Communication</h1>
         <p className="text-sm text-slate-500 mt-1">

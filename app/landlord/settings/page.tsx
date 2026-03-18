@@ -8,7 +8,7 @@ export default async function SettingsPage() {
   const { data: feeConfig } = await supabase.from('late_fee_config').select('*').eq('landlord_id', user!.id).single()
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 page-enter">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
         <p className="text-sm text-slate-500 mt-1">Manage your account and billing configuration.</p>

@@ -25,26 +25,36 @@ export default async function ContractorLayout({ children }: { children: React.R
     .toUpperCase()
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className="min-h-screen bg-mesh">
+      {/* ── Header ───────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 border-b border-white/10 shadow-[0_1px_20px_rgba(0,0,0,0.2)]"
-        style={{ background: 'linear-gradient(135deg, #0f1729 0%, #1a2744 100%)' }}
+        className="sticky top-0 z-40 animate-slide-down"
+        style={{
+          background: 'linear-gradient(180deg, #080d1c 0%, #0b1122 100%)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 2px 24px rgba(0,0,0,0.25)',
+        }}
       >
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold text-sm">
-              E
+            <div className="relative">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                E
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-sidebar shadow-[0_0_5px_rgba(74,222,128,0.7)]" />
             </div>
             <div>
-              <p className="text-white font-bold text-sm tracking-tight">EstateFlow</p>
-              <p className="text-slate-400 text-xs">Contractor Portal</p>
+              <p className="text-white font-bold text-sm tracking-tight leading-tight">EstateFlow</p>
+              <p className="text-slate-500 text-[10px]">Contractor Portal</p>
             </div>
           </div>
 
-          <nav className="flex items-center gap-1">
+          {/* Nav link */}
+          <nav>
             <Link
               href="/contractor/work-orders"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-150"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/8 transition-all duration-150"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
@@ -53,9 +63,10 @@ export default async function ContractorLayout({ children }: { children: React.R
             </Link>
           </nav>
 
+          {/* User */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white text-xs font-bold">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white/10">
                 {initials}
               </div>
               <span className="text-slate-300 text-sm font-medium hidden sm:block">
@@ -64,10 +75,12 @@ export default async function ContractorLayout({ children }: { children: React.R
             </div>
             <a
               href="/api/auth/logout"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
               Sign out
             </a>
@@ -75,6 +88,7 @@ export default async function ContractorLayout({ children }: { children: React.R
         </div>
       </header>
 
+      {/* ── Content ──────────────────────────────────────── */}
       <main className="max-w-5xl mx-auto w-full px-6 py-8">
         {children}
       </main>

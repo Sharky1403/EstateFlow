@@ -69,7 +69,7 @@ export default async function MaintenancePage() {
   const openCount = tickets?.filter(t => t.status === 'open').length ?? 0
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 page-enter">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Maintenance</h1>

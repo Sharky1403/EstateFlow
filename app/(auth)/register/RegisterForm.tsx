@@ -3,25 +3,28 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { cn } from '@/lib/utils'
 import type { Role } from '@/types/database'
 
+const roles: { value: Role; label: string; icon: string; desc: string }[] = [
+  { value: 'landlord',   label: 'Landlord',   icon: '🏢', desc: 'Manage properties' },
+  { value: 'tenant',     label: 'Tenant',     icon: '🏠', desc: 'View my unit'       },
+  { value: 'contractor', label: 'Contractor', icon: '🔧', desc: 'Handle work orders' },
+]
+
 export function RegisterForm() {
-  const router = useRouter()
+  const router  = useRouter()
   const supabase = createClient()
 
-  const [role, setRole] = useState<Role>('tenant')
+  const [role,     setRole]     = useState<Role>('tenant')
   const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [phone, setPhone] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const roles: { value: Role; label: string }[] = [
-    { value: 'landlord', label: '🏠 Landlord' },
-    { value: 'tenant', label: '👤 Tenant' },
-    { value: 'contractor', label: '🔧 Contractor' },
-  ]
+  const [phone,    setPhone]    = useState('')
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -31,9 +34,7 @@ export function RegisterForm() {
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { role, full_name: fullName },
-      },
+      options: { data: { role, full_name: fullName } },
     })
 
     if (signUpError || !authData.user) {
@@ -51,108 +52,108 @@ export function RegisterForm() {
 
     setLoading(false)
 
-    // If email confirmation is required, session will be null — send to verify page
     if (!authData.session) {
       router.push('/verify')
       return
     }
 
-    // Already signed in — go directly to the right dashboard
-    if (role === 'landlord') router.push('/landlord/dashboard')
-    else if (role === 'tenant') router.push('/tenant/dashboard')
+    if (role === 'landlord')        router.push('/landlord/dashboard')
+    else if (role === 'tenant')     router.push('/tenant/dashboard')
     else if (role === 'contractor') router.push('/contractor/work-orders')
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-      <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-5">
 
-        {/* Role Selector */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">I am a...</p>
-          <div className="grid grid-cols-3 gap-2">
-            {roles.map(r => (
-              <button
-                key={r.value}
-                type="button"
-                onClick={() => setRole(r.value)}
-                className={`rounded-lg border p-3 text-sm font-medium transition-colors
-                  ${role === r.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-600'
-                    : 'border-gray-200 hover:bg-gray-50 text-gray-600'
-                  }`}
-              >
+      {/* Role selector */}
+      <div>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">I am a…</p>
+        <div className="grid grid-cols-3 gap-2">
+          {roles.map(r => (
+            <button
+              key={r.value}
+              type="button"
+              onClick={() => setRole(r.value)}
+              className={cn(
+                'flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all duration-150',
+                role === r.value
+                  ? 'border-primary-400 bg-primary-50 ring-2 ring-primary-400/20'
+                  : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+              )}
+            >
+              <span className="text-xl">{r.icon}</span>
+              <span className={cn('text-xs font-semibold', role === r.value ? 'text-primary-700' : 'text-slate-600')}>
                 {r.label}
-              </button>
-            ))}
-          </div>
+              </span>
+              <span className="text-[10px] text-slate-400 leading-tight">{r.desc}</span>
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Full Name */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Full Name</label>
-          <input
-            type="text"
-            value={fullName}
-            onChange={e => setFullName(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            required
-            minLength={2}
-          />
+      <Input
+        label="Full Name"
+        type="text"
+        placeholder="Jane Smith"
+        value={fullName}
+        onChange={e => setFullName(e.target.value)}
+        required
+        minLength={2}
+      />
+
+      <Input
+        label="Email Address"
+        type="email"
+        placeholder="name@company.com"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        required
+      />
+
+      <Input
+        label="Password"
+        type="password"
+        placeholder="Min. 8 characters"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        required
+        minLength={8}
+      />
+
+      <Input
+        label="Phone"
+        type="tel"
+        placeholder="+1 (555) 000-0000"
+        value={phone}
+        onChange={e => setPhone(e.target.value)}
+        hint="Optional — used for maintenance alerts"
+      />
+
+      {error && (
+        <div className="p-3 rounded-xl bg-red-50 text-red-600 border border-red-200/80 text-sm font-medium flex items-center gap-2 animate-scale-in">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {error}
         </div>
+      )}
 
-        {/* Email */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            required
-          />
-        </div>
+      <Button
+        type="submit"
+        loading={loading}
+        className="w-full"
+        variant="gradient"
+        size="lg"
+      >
+        Create Account
+      </Button>
 
-        {/* Password */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            required
-            minLength={8}
-          />
-        </div>
-
-        {/* Phone */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Phone <span className="text-gray-400">(optional)</span></label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-          />
-        </div>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Creating account...' : 'Create Account'}
-        </button>
-
-        <p className="text-center text-sm text-gray-500">
-          Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">Sign in</Link>
-        </p>
-
-      </form>
-    </div>
+      <p className="text-center text-sm text-slate-500">
+        Already have an account?{' '}
+        <Link href="/login" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">
+          Sign in
+        </Link>
+      </p>
+    </form>
   )
 }

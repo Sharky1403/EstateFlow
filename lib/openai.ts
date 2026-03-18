@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import type { TicketUrgency, TicketCategory } from '@/types/database'
 
-function getClient() {
+export function getClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 }
 
