@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LandlordTicketChat } from './LandlordTicketChat'
 import { AssignContractorButton } from './AssignContractorButton'
+import { UrgencyEditor } from './UrgencyEditor'
 
 export default async function MaintenanceTicketPage({ params }: { params: Promise<{ ticketId: string }> }) {
   const resolvedParams = await params
@@ -19,10 +20,10 @@ export default async function MaintenanceTicketPage({ params }: { params: Promis
 
   if (!ticket) return notFound()
 
-  // Get contractors for assignment
+  // Get contractors for assignment (with insurance data)
   const { data: contractors } = await supabase
     .from('profiles')
-    .select('id, full_name, company_name, specialties')
+    .select('id, full_name, company_name, specialties, contractor_insurance(expiry_date, policy_document_url)')
     .eq('role', 'contractor')
 
   const isEmergency = ticket.urgency === 'emergency'
@@ -80,8 +81,9 @@ export default async function MaintenanceTicketPage({ params }: { params: Promis
           <LandlordTicketChat ticketId={ticket.id} currentStatus={ticket.status} />
         </div>
 
-        {/* Right Col: Assignment */}
-        <div className="w-full md:w-80 space-y-6">
+        {/* Right Col: Assignment + Priority */}
+        <div className="w-full md:w-80 space-y-4">
+          <UrgencyEditor ticketId={ticket.id} current={ticket.urgency} />
           <AssignContractorButton
             ticketId={ticket.id}
             currentContractorId={ticket.contractor_id}

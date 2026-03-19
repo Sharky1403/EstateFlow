@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { MediaUploader } from './MediaUploader'
+import { AccessCodeEditor } from './AccessCodeEditor'
+import { EditUnitButton } from '../../EditUnitButton'
+
+export const dynamic = 'force-dynamic'
+import { InviteButton } from '@/app/landlord/leases/InviteButton'
 import Link from 'next/link'
 
 export default async function UnitDetailPage({ params }: { params: Promise<{ buildingId: string; unitId: string }> }) {
@@ -34,8 +39,14 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ bui
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Unit {unit?.unit_number}</h1>
-        <Badge label={unit?.occupied ? 'Occupied' : 'Vacant'} variant={unit?.occupied ? 'green' : 'gray'} />
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">Unit {unit?.unit_number}</h1>
+          <Badge label={unit?.occupied ? 'Occupied' : 'Vacant'} variant={unit?.occupied ? 'green' : 'gray'} />
+        </div>
+        <EditUnitButton
+          unit={{ id: resolvedParams.unitId, unit_number: unit?.unit_number ?? '', floor_number: unit?.floor_number ?? 1, market_rent: unit?.market_rent ?? 0, actual_rent: unit?.actual_rent ?? 0 }}
+          buildingId={resolvedParams.buildingId}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -74,6 +85,10 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ bui
             <p className="text-gray-400">Address</p>
             <p className="font-medium">{(unit as any)?.buildings?.address}</p>
           </div>
+        </div>
+
+        <div className="mt-5 pt-4 border-t border-slate-100">
+          <AccessCodeEditor unitId={resolvedParams.unitId} initialCode={unit?.access_code ?? null} />
         </div>
 
         {unit?.metadata?.appliance_serials && Object.keys(unit.metadata.appliance_serials).length > 0 && (
@@ -118,11 +133,18 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ bui
             </Link>
           </div>
         ) : (
-          <div className="text-center py-6 text-gray-400">
-            <p>No active lease.</p>
-            <Link href={`/landlord/leases/new?unitId=${resolvedParams.unitId}`} className="text-sm text-primary hover:underline mt-1 inline-block">
-              Create a lease for this unit →
-            </Link>
+          <div className="text-center py-6 space-y-3">
+            <p className="text-gray-400">No active lease.</p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Link href={`/landlord/leases/new?unitId=${resolvedParams.unitId}`} className="text-sm text-primary hover:underline">
+                Create a lease →
+              </Link>
+              <span className="text-gray-300">·</span>
+              <InviteButton
+                units={[{ id: resolvedParams.unitId, unit_number: unit?.unit_number ?? '', building_name: (unit as any)?.buildings?.name ?? '' }]}
+                preselectedUnitId={resolvedParams.unitId}
+              />
+            </div>
           </div>
         )}
       </Card>

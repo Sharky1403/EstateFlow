@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', fontSize: 11 },
@@ -12,7 +12,7 @@ const styles = StyleSheet.create({
   clauseTitle: { fontWeight: 'bold', marginBottom: 2 },
 })
 
-export function LeaseDocument({ lease }: { lease: any }) {
+export function LeaseDocument({ lease, signatureData }: { lease: any; signatureData?: string | null }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -35,8 +35,8 @@ export function LeaseDocument({ lease }: { lease: any }) {
             <Text style={styles.heading}>Special Clauses</Text>
             {lease.clauses.map((c: any, i: number) => (
               <View key={i} style={styles.clause}>
-                <Text style={styles.clauseTitle}>{c.title}</Text>
-                <Text>{c.body}</Text>
+                <Text style={styles.clauseTitle}>{c.title ?? c.text ?? ''}</Text>
+                {c.body ? <Text>{c.body}</Text> : null}
               </View>
             ))}
           </View>
@@ -50,7 +50,19 @@ export function LeaseDocument({ lease }: { lease: any }) {
             </View>
             <View style={{ flex: 1 }}>
               <Text>Tenant Signature:</Text>
-              <View style={{ borderBottom: '1px solid #000', marginTop: 30 }} />
+              {signatureData ? (
+                <Image
+                  src={signatureData}
+                  style={{ width: 160, height: 50, marginTop: 8, objectFit: 'contain' }}
+                />
+              ) : (
+                <View style={{ borderBottom: '1px solid #000', marginTop: 30 }} />
+              )}
+              {lease?.signed_at && (
+                <Text style={{ fontSize: 9, color: '#555', marginTop: 4 }}>
+                  Signed: {new Date(lease.signed_at).toLocaleString()}
+                </Text>
+              )}
             </View>
           </View>
         </View>

@@ -1,13 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { calculateProratedRent } from '@/lib/utils/rent'
+import { renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
+import { LeaseDocument } from '@/components/pdf/LeaseDocument'
+import React from 'react'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { unitId, tenantId, startDate, endDate, monthlyRent, clauses } = await req.json()
+  const { unitId, tenantId, startDate, endDate, monthlyRent, clauses, breakFee, breakFeeDescription } = await req.json()
 
   if (!unitId || !tenantId || !startDate || !endDate || !monthlyRent) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -34,6 +37,8 @@ export async function POST(req: Request) {
       end_date: endDate,
       monthly_rent: monthlyRent,
       clauses: clauses ?? [],
+      break_fee: breakFee ?? 0,
+      break_fee_description: breakFeeDescription ?? null,
       status: 'active',
     })
     .select()
@@ -43,6 +48,31 @@ export async function POST(req: Request) {
 
   // Mark unit as occupied
   await supabase.from('units').update({ occupied: true }).eq('id', unitId)
+
+  // Auto-generate PDF
+  try {
+    const { data: leaseForPdf } = await supabase
+      .from('leases')
+      .select('*, profiles!tenant_id(full_name), units(unit_number, buildings(name, address))')
+      .eq('id', lease.id)
+      .single()
+
+    const pdfBuffer = await renderToBuffer(
+      React.createElement(LeaseDocument, { lease: leaseForPdf }) as React.ReactElement<DocumentProps>
+    )
+    const fileName = `leases/${lease.id}.pdf`
+    const { data: upload, error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(fileName, pdfBuffer, { contentType: 'application/pdf', upsert: true })
+
+    if (!uploadError && upload) {
+      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fileName)
+      await supabase.from('leases').update({ pdf_url: urlData.publicUrl }).eq('id', lease.id)
+      lease.pdf_url = urlData.publicUrl
+    }
+  } catch (_) {
+    // PDF generation failure is non-fatal — lease is still created
+  }
 
   // Calculate and log prorated first-month rent if move-in is not the 1st
   const moveIn = new Date(startDate)
@@ -66,5 +96,5 @@ export async function POST(req: Request) {
     description: 'Security deposit (held)',
   })
 
-  return NextResponse.json({ lease })
+  return NextResponse.json({ lease: { ...lease, pdf_url: lease.pdf_url ?? null } })
 }

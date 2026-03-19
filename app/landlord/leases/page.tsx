@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { RenewLeaseButton } from './RenewLeaseButton'
+import { TerminateLeaseButton } from './TerminateLeaseButton'
+import { InviteButton } from './InviteButton'
 
 const STATUS_VARIANT: Record<string, 'green' | 'yellow' | 'gray' | 'red'> = {
   active: 'green',
@@ -15,16 +17,25 @@ export default async function LandlordLeasesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: leases } = await supabase
-    .from('leases')
-    .select(`
-      id, monthly_rent, start_date, end_date, status, signed_at, pdf_url,
-      units(id, unit_number, buildings(id, name, landlord_id)),
-      profiles!tenant_id(id, full_name)
-    `)
-    .order('created_at', { ascending: false })
+  const [{ data: leases }, { data: vacantUnits }] = await Promise.all([
+    supabase
+      .from('leases')
+      .select(`
+        id, monthly_rent, start_date, end_date, status, signed_at, pdf_url, break_fee, break_fee_description,
+        units(id, unit_number, buildings(id, name, landlord_id)),
+        profiles!tenant_id(id, full_name)
+      `)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('units')
+      .select('id, unit_number, buildings(name, landlord_id)')
+      .eq('occupied', false),
+  ])
 
-  const myLeases = (leases ?? []).filter((l: any) => l.units?.buildings?.landlord_id === user?.id)
+  const myLeases   = (leases ?? []).filter((l: any) => l.units?.buildings?.landlord_id === user?.id)
+  const myVacant   = (vacantUnits ?? [])
+    .filter((u: any) => u.buildings?.landlord_id === user?.id)
+    .map((u: any) => ({ id: u.id, unit_number: u.unit_number, building_name: u.buildings?.name ?? '' }))
 
   const active      = myLeases.filter(l => l.status === 'active').length
   const expiring60  = myLeases.filter(l => {
@@ -35,11 +46,14 @@ export default async function LandlordLeasesPage() {
 
   return (
     <div className="space-y-6 page-enter">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Leases</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {myLeases.length} lease{myLeases.length !== 1 ? 's' : ''} across your portfolio
-        </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Leases</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {myLeases.length} lease{myLeases.length !== 1 ? 's' : ''} across your portfolio
+          </p>
+        </div>
+        {myVacant.length > 0 && <InviteButton units={myVacant} />}
       </div>
 
       {myLeases.length > 0 && (
@@ -136,6 +150,9 @@ export default async function LandlordLeasesPage() {
                           )}
                           {(lease.status === 'active' || lease.status === 'expired') && (
                             <RenewLeaseButton lease={lease} />
+                          )}
+                          {lease.status === 'active' && (
+                            <TerminateLeaseButton lease={lease} />
                           )}
                           {lease.pdf_url && (
                             <a

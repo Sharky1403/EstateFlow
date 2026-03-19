@@ -37,6 +37,7 @@ export function SettingsForm({ profile, feeConfig }: { profile: any; feeConfig: 
 
   const profileForm = useForm({
     defaultValues: {
+      full_name:    profile?.full_name ?? '',
       company_name: profile?.company_name ?? '',
       phone:        profile?.phone ?? '',
     },
@@ -130,6 +131,11 @@ export function SettingsForm({ profile, feeConfig }: { profile: any; feeConfig: 
 
       <SectionCard icon="🏢" title="Company Profile" description="Your public business information">
         <form onSubmit={profileForm.handleSubmit(saveProfile)} className="space-y-4">
+          <Input
+            label="Full Name"
+            placeholder="John Doe"
+            {...profileForm.register('full_name')}
+          />
           <Input
             label="Company Name"
             placeholder="Acme Property Group"

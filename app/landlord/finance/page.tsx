@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { calculateNOI } from '@/lib/utils/finance'
+import { AddExpenseModal } from './AddExpenseModal'
+import { RentComparisonChart } from './RentComparisonChart'
 
 function MetricCard({ label, value, sub, gradient, icon }: {
   label: string
@@ -35,14 +37,33 @@ function MetricCard({ label, value, sub, gradient, icon }: {
 export default async function FinancePage() {
   const supabase = await createClient()
 
-  const { data: entries } = await supabase
-    .from('ledger_entries')
-    .select('*, leases(units(buildings(landlord_id)))')
+  const [
+    { data: entries },
+    { data: buildings },
+    { data: units },
+  ] = await Promise.all([
+    supabase.from('ledger_entries').select('*, leases(units(buildings(landlord_id)))'),
+    supabase.from('buildings').select('id, name'),
+    supabase.from('units').select('id, unit_number, market_rent, actual_rent, building_id, buildings(name)'),
+  ])
 
   const revenue  = entries?.filter(e => e.bucket === 'revenue').reduce((s, e) => s + e.amount, 0) ?? 0
   const expenses = entries?.filter(e => e.bucket === 'expense').reduce((s, e) => s + e.amount, 0) ?? 0
   const noi      = calculateNOI(revenue, expenses)
   const margin   = revenue > 0 ? Math.round((noi / revenue) * 100) : 0
+
+  const totalMarket = units?.reduce((s, u) => s + (u.market_rent ?? 0), 0) ?? 0
+  const totalActual = units?.reduce((s, u) => s + (u.actual_rent ?? 0), 0) ?? 0
+  const rentGap     = totalMarket - totalActual
+  const rentGapPct  = totalMarket > 0 ? Math.round((rentGap / totalMarket) * 100) : 0
+
+  const rentChartData = (units ?? [])
+    .filter(u => (u.market_rent ?? 0) > 0 || (u.actual_rent ?? 0) > 0)
+    .map(u => ({
+      label: `${(u.buildings as any)?.name ?? ''} · ${u.unit_number}`,
+      market: u.market_rent ?? 0,
+      actual: u.actual_rent ?? 0,
+    }))
 
   return (
     <div className="space-y-8 page-enter">
@@ -52,15 +73,18 @@ export default async function FinancePage() {
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Financial Overview</h1>
           <p className="text-sm text-slate-500 mt-1">All-time revenue, expenses, and net operating income.</p>
         </div>
-        <Link
-          href="/landlord/finance/tax-report"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 border border-primary-200 bg-primary-50 px-4 py-2 rounded-xl hover:bg-primary-100 transition-colors"
-        >
-          Tax Report
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </Link>
+        <div className="flex items-center gap-2">
+          <AddExpenseModal buildings={buildings ?? []} />
+          <Link
+            href="/landlord/finance/tax-report"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 border border-primary-200 bg-primary-50 px-4 py-2 rounded-xl hover:bg-primary-100 transition-colors"
+          >
+            Tax Report
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </Link>
+        </div>
       </div>
 
       {/* Metric cards */}
@@ -125,6 +149,47 @@ export default async function FinancePage() {
           </div>
         </div>
       )}
+
+      {/* Market vs Actual Rent */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5">
+        <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Market Rent vs Actual Rent</p>
+            <p className="text-xs text-slate-400 mt-0.5">Per-unit comparison of potential vs collected rent</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="text-center">
+              <p className="text-slate-400 font-medium">Market Total</p>
+              <p className="text-base font-bold text-slate-800 tabular-lining">${totalMarket.toLocaleString()}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-400 font-medium">Actual Total</p>
+              <p className="text-base font-bold text-emerald-600 tabular-lining">${totalActual.toLocaleString()}</p>
+            </div>
+            {rentGap > 0 && (
+              <div className="text-center">
+                <p className="text-slate-400 font-medium">Gap</p>
+                <p className="text-base font-bold text-orange-500 tabular-lining">−${rentGap.toLocaleString()} <span className="text-xs font-semibold">({rentGapPct}%)</span></p>
+              </div>
+            )}
+          </div>
+        </div>
+        {rentGap > 0 && (
+          <div className="mb-5">
+            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-700"
+                style={{ width: `${100 - rentGapPct}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5 text-[11px] text-slate-400">
+              <span className="text-emerald-600 font-medium">${totalActual.toLocaleString()} collected</span>
+              <span className="text-orange-500 font-medium">${rentGap.toLocaleString()} unrealized</span>
+            </div>
+          </div>
+        )}
+        <RentComparisonChart data={rentChartData} />
+      </div>
 
       {/* Transactions table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card">

@@ -34,14 +34,12 @@ const links = [
     ),
   },
   {
-    href: '/tenant/lease',
-    label: 'Lease',
+    href: '/tenant/announcements',
+    label: 'News',
     icon: (active: boolean) => (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
+        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
       </svg>
     ),
   },
@@ -78,7 +76,6 @@ export function TenantBottomNav() {
               href={link.href}
               className="flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-200 relative"
             >
-              {/* Active top indicator */}
               {isActive && (
                 <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-400 rounded-b-full shadow-[0_2px_8px_rgba(59,130,246,0.8)]" />
               )}

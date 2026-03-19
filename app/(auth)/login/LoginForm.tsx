@@ -82,12 +82,19 @@ export function LoginForm() {
         </Button>
       </div>
 
-      <p className="text-center text-sm text-slate-500">
-        New here?{' '}
-        <Link href="/register" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">
-          Create an account
-        </Link>
-      </p>
+      <div className="text-center space-y-1">
+        <p className="text-sm text-slate-500">
+          <Link href="/forgot-password" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">
+            Forgot your password?
+          </Link>
+        </p>
+        <p className="text-sm text-slate-500">
+          New here?{' '}
+          <Link href="/register" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">
+            Create an account
+          </Link>
+        </p>
+      </div>
     </form>
   )
 }

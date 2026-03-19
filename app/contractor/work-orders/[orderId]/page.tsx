@@ -11,7 +11,7 @@ export default async function ContractorWorkOrderDetails({ params }: { params: P
 
   const { data: ticket } = await supabase
     .from('maintenance_tickets')
-    .select('*, units(unit_number, buildings(name, address)), profiles!tenant_id(full_name, phone)')
+    .select('*, units(unit_number, access_code, buildings(name, address)), profiles!tenant_id(full_name, phone)')
     .eq('id', resolvedParams.orderId)
     .single()
 
@@ -53,6 +53,17 @@ export default async function ContractorWorkOrderDetails({ params }: { params: P
                   <p className="text-slate-500 mt-0.5">{(ticket.profiles as any)?.phone ?? 'No phone provided'}</p>
                 </div>
               </div>
+              {(ticket.units as any)?.access_code && (
+                <div className="sm:col-span-2 bg-amber-50 border border-amber-200/80 rounded-xl px-4 py-3">
+                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                    <span className="text-base">🔑</span> Access Code
+                  </p>
+                  <p className="font-mono font-bold text-amber-900 text-base tracking-widest">
+                    {(ticket.units as any).access_code}
+                  </p>
+                  <p className="text-xs text-amber-600 mt-0.5">Keep this confidential. Do not share with unauthorised persons.</p>
+                </div>
+              )}
             </div>
           </Card>
 

@@ -14,6 +14,7 @@ type BuildingData = z.infer<typeof BuildingSchema>
 
 export function NewBuildingButton() {
   const [open, setOpen] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<BuildingData>({
@@ -21,8 +22,13 @@ export function NewBuildingButton() {
   })
 
   async function onSubmit(data: BuildingData) {
+    setServerError(null)
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('buildings').insert({ ...data, landlord_id: user!.id })
+    const { error } = await supabase.from('buildings').insert({ ...data, landlord_id: user!.id })
+    if (error) {
+      setServerError(error.message)
+      return
+    }
     reset()
     setOpen(false)
     router.refresh()
@@ -35,7 +41,7 @@ export function NewBuildingButton() {
         Add Building
       </Button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add New Building" size="sm">
+      <Modal open={open} onClose={() => { setOpen(false); setServerError(null) }} title="Add New Building" size="sm">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
             label="Building Name"
@@ -49,6 +55,9 @@ export function NewBuildingButton() {
             {...register('address')}
             error={errors.address?.message}
           />
+          {serverError && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{serverError}</p>
+          )}
           <div className="pt-1">
             <Button type="submit" loading={isSubmitting} className="w-full" size="lg">
               Create Building

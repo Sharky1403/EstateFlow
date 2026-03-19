@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { TenantNav } from './TenantNav'
 import { TenantBottomNav } from './TenantBottomNav'
+import { PushNotificationSetup } from '@/components/PushNotificationSetup'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,40 +27,99 @@ export default async function TenantLayout({ children }: { children: React.React
     .toUpperCase()
 
   return (
-    <div className="min-h-screen bg-mesh flex flex-col">
-      {/* ── Header ───────────────────────────────────────── */}
-      <header
-        className="sticky top-0 z-40 h-14 flex items-center animate-slide-down"
+    <div className="flex min-h-screen bg-mesh">
+      {/* ── Sidebar (desktop only) ───────────────────────── */}
+      <aside
+        className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:flex-col z-40"
         style={{
-          background: 'linear-gradient(180deg, #080d1c 0%, #0b1122 100%)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          width: '260px',
+          background: 'linear-gradient(180deg, #080d1c 0%, #060b18 100%)',
         }}
       >
-        <div className="max-w-2xl mx-auto px-5 w-full flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <img src="/logo.png" alt="EstateFlow" className="h-7 w-auto rounded-lg" />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-sidebar shadow-[0_0_5px_rgba(74,222,128,0.7)]" />
-            </div>
-            <span className="font-bold text-white text-sm tracking-tight">EstateFlow</span>
-          </div>
+        {/* Subtle top ambient glow */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-0 right-0 h-32 opacity-40"
+          style={{ background: 'radial-gradient(ellipse at 50% -10%, rgba(59,130,246,0.25), transparent 70%)' }}
+        />
 
-          {/* Avatar */}
+        {/* Logo / Brand */}
+        <div className="relative px-5 pt-5 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white text-xs font-semibold shadow-sm ring-2 ring-white/10">
-              {initials}
+            <div className="relative shrink-0">
+              <img src="/logo.png" alt="EstateFlow" className="h-9 w-auto rounded-xl" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-sidebar shadow-[0_0_6px_rgba(74,222,128,0.7)]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm tracking-tight">EstateFlow</p>
+              <p className="text-slate-500 text-xs truncate">Tenant Portal</p>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* ── Content ──────────────────────────────────────── */}
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-5 pb-24">
-        {children}
+        {/* Divider */}
+        <div className="mx-4 h-px bg-white/5" />
+
+        {/* Navigation */}
+        <TenantNav />
+
+        {/* Divider */}
+        <div className="mx-4 h-px bg-white/5" />
+
+        {/* User section */}
+        <div className="px-3 py-3">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all duration-150 group">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-xs font-semibold truncate leading-tight">
+                {profile?.full_name}
+              </p>
+              <p className="text-slate-500 text-[11px]">Tenant</p>
+            </div>
+            <a
+              href="/api/auth/logout"
+              title="Sign out"
+              className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Main content ─────────────────────────────────── */}
+      <main className="flex-1 min-h-screen lg:ml-[260px]">
+        {/* Top bar */}
+        <div className="sticky top-0 z-30 h-14 bg-white/80 backdrop-blur-xl border-b border-slate-200/70 flex items-center px-4 lg:px-8 animate-slide-down">
+          {/* Mobile: show logo + name */}
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <img src="/logo.png" alt="EstateFlow" className="h-7 w-auto rounded-lg" />
+            <span className="text-sm font-bold text-slate-800">EstateFlow</span>
+          </div>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2.5">
+            <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(74,222,128,0.7)]" />
+            <span className="text-xs text-slate-400 font-medium">Live</span>
+          </div>
+        </div>
+
+        {/* Page content — extra bottom padding on mobile for bottom nav */}
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 pb-24 lg:pb-8">
+          <PushNotificationSetup />
+          {children}
+        </div>
       </main>
 
-      <TenantBottomNav />
+      {/* ── Bottom nav (mobile only) ──────────────────────── */}
+      <div className="lg:hidden">
+        <TenantBottomNav />
+      </div>
     </div>
   )
 }

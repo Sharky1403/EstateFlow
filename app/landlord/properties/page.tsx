@@ -3,13 +3,28 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { NewBuildingButton } from './newbuildingbutton'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PropertiesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: buildings } = await supabase
-    .from('buildings')
-    .select('*, units(count)')
-    .eq('landlord_id', user!.id)
+
+  // Fetch buildings and unit counts in separate queries to avoid RLS recursion
+  const [{ data: buildings }, { data: unitCounts }] = await Promise.all([
+    supabase
+      .from('buildings')
+      .select('id, name, address, created_at')
+      .eq('landlord_id', user!.id),
+    supabase
+      .from('units')
+      .select('building_id')
+  ])
+
+  // Build a count map: building_id -> count
+  const countMap: Record<string, number> = {}
+  for (const u of unitCounts ?? []) {
+    countMap[u.building_id] = (countMap[u.building_id] ?? 0) + 1
+  }
 
   return (
     <div className="space-y-6 page-enter">
@@ -26,7 +41,7 @@ export default async function PropertiesPage() {
       {buildings && buildings.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {buildings.map((building) => {
-            const unitCount = (building.units as any)?.[0]?.count ?? 0
+            const unitCount = countMap[building.id] ?? 0
             return (
               <Link key={building.id} href={`/landlord/properties/${building.id}`}>
                 <Card className="cursor-pointer group hover:shadow-card-md hover:-translate-y-0.5 transition-all duration-200">

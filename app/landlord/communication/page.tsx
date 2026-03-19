@@ -11,7 +11,7 @@ export default async function CommunicationPage() {
 
   const { data: announcements } = await supabase
     .from('announcements')
-    .select('*')
+    .select('*, notification_read_receipts(count)')
     .eq('landlord_id', user!.id)
     .order('created_at', { ascending: false })
 
@@ -83,12 +83,19 @@ export default async function CommunicationPage() {
                           </span>
                         ))}
                       </div>
-                      <span className="text-xs text-slate-400 whitespace-nowrap">
-                        {new Date(a.created_at).toLocaleDateString('en-US', {
-                          month: 'short', day: 'numeric', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit',
-                        })}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        {(a as any).notification_read_receipts?.[0]?.count > 0 && (
+                          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                            ✓ {(a as any).notification_read_receipts[0].count} read
+                          </span>
+                        )}
+                        <span className="text-xs text-slate-400 whitespace-nowrap">
+                          {new Date(a.created_at).toLocaleDateString('en-US', {
+                            month: 'short', day: 'numeric', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}

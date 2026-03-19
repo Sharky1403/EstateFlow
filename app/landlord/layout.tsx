@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { LandlordNav } from './LandlordNav'
+import { MobileSidebar } from './MobileSidebar'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,56 +27,41 @@ export default async function LandlordLayout({ children }: { children: React.Rea
 
   return (
     <div className="flex min-h-screen bg-mesh">
-      {/* ── Sidebar ─────────────────────────────────────── */}
+      {/* ── Sidebar (desktop only) ───────────────────────── */}
       <aside
-        className="fixed inset-y-0 left-0 flex flex-col z-40 bg-dots-dark"
+        className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:flex-col z-40"
         style={{
           width: '260px',
           background: 'linear-gradient(180deg, #080d1c 0%, #060b18 100%)',
         }}
       >
-        {/* Subtle top ambient glow */}
         <div
           aria-hidden
           className="pointer-events-none absolute top-0 left-0 right-0 h-32 opacity-40"
           style={{ background: 'radial-gradient(ellipse at 50% -10%, rgba(59,130,246,0.25), transparent 70%)' }}
         />
-
-        {/* Logo / Brand */}
         <div className="relative px-5 pt-5 pb-4">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
               <img src="/logo.png" alt="EstateFlow" className="h-9 w-auto rounded-xl" />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-sidebar shadow-[0_0_6px_rgba(74,222,128,0.7)]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#080d1c] shadow-[0_0_6px_rgba(74,222,128,0.7)]" />
             </div>
             <div className="min-w-0">
               <p className="text-white font-bold text-sm tracking-tight">EstateFlow</p>
-              <p className="text-slate-500 text-xs truncate">
-                {profile?.company_name ?? 'Property Manager'}
-              </p>
+              <p className="text-slate-500 text-xs truncate">{profile?.company_name ?? 'Property Manager'}</p>
             </div>
           </div>
         </div>
-
-        {/* Divider */}
         <div className="mx-4 h-px bg-white/5" />
-
-        {/* Navigation */}
         <LandlordNav />
-
-        {/* Divider */}
         <div className="mx-4 h-px bg-white/5" />
-
-        {/* User section */}
         <div className="px-3 py-3">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all duration-150 group">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all duration-150">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-xs font-semibold truncate leading-tight">
-                {profile?.full_name}
-              </p>
+              <p className="text-white text-xs font-semibold truncate leading-tight">{profile?.full_name}</p>
               <p className="text-slate-500 text-[11px]">Landlord</p>
             </div>
             <a
@@ -94,9 +80,19 @@ export default async function LandlordLayout({ children }: { children: React.Rea
       </aside>
 
       {/* ── Main content ─────────────────────────────────── */}
-      <main className="flex-1 min-h-screen" style={{ marginLeft: '260px' }}>
+      <main className="flex-1 min-h-screen lg:ml-[260px]">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 h-14 bg-white/80 backdrop-blur-xl border-b border-slate-200/70 flex items-center px-8 animate-slide-down">
+        <div className="sticky top-0 z-30 h-14 bg-white/80 backdrop-blur-xl border-b border-slate-200/70 flex items-center px-4 lg:px-8 animate-slide-down gap-3">
+          {/* Mobile hamburger + mobile logo */}
+          <MobileSidebar
+            initials={initials}
+            fullName={profile?.full_name ?? ''}
+            companyName={profile?.company_name ?? ''}
+          />
+          <div className="flex items-center gap-2 lg:hidden">
+            <img src="/logo.png" alt="EstateFlow" className="h-7 w-auto rounded-lg" />
+            <span className="text-sm font-bold text-slate-800">EstateFlow</span>
+          </div>
           <div className="flex-1" />
           <div className="flex items-center gap-2.5">
             <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(74,222,128,0.7)]" />
@@ -105,7 +101,7 @@ export default async function LandlordLayout({ children }: { children: React.Rea
         </div>
 
         {/* Page content */}
-        <div className="max-w-7xl mx-auto px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
           {children}
         </div>
       </main>

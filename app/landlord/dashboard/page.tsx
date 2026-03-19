@@ -40,21 +40,47 @@ function StatCard({
   ) : content
 }
 
+// Cache dashboard for 60 seconds — serves stale data instantly while revalidating in background
+export const revalidate = 60
+
 export default async function DashboardPage() {
   const supabase = await createClient()
 
-  const { data: buildings } = await supabase.from('buildings').select('id, name, address')
-  const { data: units }     = await supabase.from('units').select('id, occupied, market_rent, actual_rent, building_id')
-  const { data: tickets }   = await supabase.from('maintenance_tickets').select('id, status')
-
-  // Revenue trend — last 6 months
+  // Run all queries in parallel instead of sequentially
   const sixMonthsAgo = new Date()
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
   sixMonthsAgo.setDate(1)
-  const { data: ledger } = await supabase
-    .from('ledger_entries')
-    .select('amount, bucket, paid_at, created_at')
-    .gte('created_at', sixMonthsAgo.toISOString())
+
+  const monthStart = new Date()
+  monthStart.setDate(1)
+  monthStart.setHours(0, 0, 0, 0)
+
+  const [
+    { data: buildings },
+    { data: units },
+    { data: tickets },
+    { data: ledger },
+    { data: activeLeases },
+    { data: rentCollectedThisMonth },
+  ] = await Promise.all([
+    supabase.from('buildings').select('id, name, address'),
+    supabase.from('units').select('id, occupied, market_rent, actual_rent, building_id'),
+    supabase.from('maintenance_tickets').select('id, status, urgency, units(building_id)'),
+    supabase
+      .from('ledger_entries')
+      .select('amount, bucket, created_at')
+      .gte('created_at', sixMonthsAgo.toISOString()),
+    supabase
+      .from('leases')
+      .select('monthly_rent')
+      .eq('status', 'active'),
+    supabase
+      .from('ledger_entries')
+      .select('amount')
+      .eq('type', 'rent')
+      .eq('bucket', 'revenue')
+      .gte('created_at', monthStart.toISOString()),
+  ])
 
   // Build monthly buckets
   const monthMap: Record<string, { revenue: number; expenses: number }> = {}
@@ -82,6 +108,28 @@ export default async function DashboardPage() {
   const revenueGap    = totalMarket - totalActual
   const openTickets   = tickets?.filter(t => t.status === 'open').length ?? 0
 
+  // Collection rate: rent collected this month vs total due from active leases
+  const totalRentDue       = activeLeases?.reduce((s, l) => s + Number(l.monthly_rent ?? 0), 0) ?? 0
+  const totalRentCollected = rentCollectedThisMonth?.reduce((s, e) => s + Number(e.amount ?? 0), 0) ?? 0
+  const collectionRate     = totalRentDue > 0 ? Math.min(100, Math.round((totalRentCollected / totalRentDue) * 100)) : 0
+
+  // Per-building maintenance breakdown
+  type BuildingStats = { open: number; inProgress: number; complete: number; emergency: number }
+  const buildingTicketMap: Record<string, BuildingStats> = {}
+  for (const t of tickets ?? []) {
+    const bid = (t.units as any)?.building_id
+    if (!bid) continue
+    if (!buildingTicketMap[bid]) buildingTicketMap[bid] = { open: 0, inProgress: 0, complete: 0, emergency: 0 }
+    if (t.status === 'open')        buildingTicketMap[bid].open++
+    if (t.status === 'in_progress') buildingTicketMap[bid].inProgress++
+    if (t.status === 'complete')    buildingTicketMap[bid].complete++
+    if (t.urgency === 'emergency')  buildingTicketMap[bid].emergency++
+  }
+  const buildingMaintenanceRows = (buildings ?? [])
+    .map(b => ({ ...b, stats: buildingTicketMap[b.id] ?? { open: 0, inProgress: 0, complete: 0, emergency: 0 } }))
+    .filter(b => b.stats.open + b.stats.inProgress + b.stats.complete > 0)
+    .sort((a, b) => (b.stats.open + b.stats.inProgress) - (a.stats.open + a.stats.inProgress))
+
   return (
     <div className="space-y-8 page-enter">
 
@@ -92,7 +140,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Stat cards ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 stagger">
         <StatCard
           label="Total Units"
           value={totalUnits}
@@ -141,6 +189,19 @@ export default async function DashboardPage() {
           }
           href="/landlord/maintenance"
         />
+        <StatCard
+          label="Collection Rate"
+          value={`${collectionRate}%`}
+          sub={totalRentDue > 0 ? `$${totalRentCollected.toLocaleString()} of $${totalRentDue.toLocaleString()} collected` : 'No active leases'}
+          gradient="linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%)"
+          icon={
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          }
+          href="/landlord/finance"
+        />
       </div>
 
       {/* ── Occupancy progress ──────────────────────────── */}
@@ -181,6 +242,64 @@ export default async function DashboardPage() {
         </div>
         <RevenueChart data={chartData} />
       </div>
+
+      {/* ── Per-building maintenance breakdown ──────────── */}
+      {buildingMaintenanceRows.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">Maintenance by Building</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Active workload per property</p>
+            </div>
+            <Link href="/landlord/maintenance" className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+              View all →
+            </Link>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card divide-y divide-slate-100">
+            {buildingMaintenanceRows.map(b => {
+              const total    = b.stats.open + b.stats.inProgress + b.stats.complete
+              const active   = b.stats.open + b.stats.inProgress
+              const pctDone  = total > 0 ? Math.round((b.stats.complete / total) * 100) : 0
+              return (
+                <Link key={b.id} href={`/landlord/maintenance?building=${b.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors group">
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                    </svg>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{b.name}</p>
+                      {b.stats.emergency > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded-full">
+                          ⚡ {b.stats.emergency} emergency
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                      {b.stats.open > 0       && <span className="text-orange-500 font-medium">{b.stats.open} open</span>}
+                      {b.stats.inProgress > 0 && <span className="text-blue-500 font-medium">{b.stats.inProgress} in progress</span>}
+                      {b.stats.complete > 0   && <span className="text-emerald-500 font-medium">{b.stats.complete} done</span>}
+                    </div>
+                    <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500"
+                        style={{ width: `${pctDone}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <p className={`text-lg font-bold tabular-lining ${active > 0 ? 'text-orange-500' : 'text-emerald-600'}`}>{active}</p>
+                    <p className="text-[10px] text-slate-400 font-medium">active</p>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Properties list ─────────────────────────────── */}
       <div>

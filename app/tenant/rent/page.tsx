@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/Badge'
 import { PayNowButton } from './PayNowButton'
+import { AutoPayToggle } from './AutoPayToggle'
 
 export default async function RentPage({ searchParams }: { searchParams: Promise<{ success?: string }> }) {
   const supabase = await createClient()
@@ -12,6 +13,12 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
     .select('id, monthly_rent, start_date, end_date, status')
     .eq('tenant_id', user!.id)
     .eq('status', 'active')
+    .single()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('autopay_enabled, stripe_payment_method_id')
+    .eq('id', user!.id)
     .single()
 
   const { data: entries } = await supabase
@@ -43,26 +50,33 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
 
       {/* Rent payment card */}
       {lease ? (
-        <div
-          className="relative rounded-2xl overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%)' }}
-        >
-          <div aria-hidden className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
-          <div aria-hidden className="absolute top-6 right-12 w-16 h-16 rounded-full bg-white/5" />
+        <>
+          <div
+            className="relative rounded-2xl overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%)' }}
+          >
+            <div aria-hidden className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
+            <div aria-hidden className="absolute top-6 right-12 w-16 h-16 rounded-full bg-white/5" />
 
-          <div className="relative p-5">
-            <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Monthly Rent Due</p>
-            <p className="text-white text-4xl font-bold tabular-lining">
-              ${Number(lease.monthly_rent).toLocaleString()}
-            </p>
-            <p className="text-blue-200/70 text-xs mt-2">
-              Lease: {new Date(lease.start_date).toLocaleDateString()} – {new Date(lease.end_date).toLocaleDateString()}
-            </p>
-            <div className="mt-4">
-              <PayNowButton leaseId={lease.id} amount={Number(lease.monthly_rent)} />
+            <div className="relative p-5">
+              <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Monthly Rent Due</p>
+              <p className="text-white text-4xl font-bold tabular-lining">
+                ${Number(lease.monthly_rent).toLocaleString()}
+              </p>
+              <p className="text-blue-200/70 text-xs mt-2">
+                Lease: {new Date(lease.start_date).toLocaleDateString()} – {new Date(lease.end_date).toLocaleDateString()}
+              </p>
+              <div className="mt-4">
+                <PayNowButton leaseId={lease.id} amount={Number(lease.monthly_rent)} />
+              </div>
             </div>
           </div>
-        </div>
+          <AutoPayToggle
+            autopayEnabled={profile?.autopay_enabled ?? false}
+            hasPaymentMethod={!!profile?.stripe_payment_method_id}
+            leaseId={lease.id}
+          />
+        </>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6 text-center">
           <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl mx-auto mb-3">💳</div>

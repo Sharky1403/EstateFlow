@@ -59,19 +59,42 @@ export function AssignContractorButton({ ticketId, currentContractorId, contract
           >
             <p className="text-sm font-medium text-slate-900">None (Unassign)</p>
           </div>
-          {contractors.map(c => (
-            <div
-              key={c.id}
-              onClick={() => setSelectedId(c.id)}
-              className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${selectedId === c.id ? 'border-primary-600 bg-blue-50/50 ring-1 ring-primary-600' : 'border-slate-200 hover:border-slate-300'}`}
-            >
-              <div>
-                <p className="text-sm font-medium text-slate-900">{c.company_name || c.full_name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{c.specialties?.join(', ') || 'General Contractor'}</p>
+          {contractors.map(c => {
+            const insurance = Array.isArray(c.contractor_insurance) ? c.contractor_insurance[0] : c.contractor_insurance
+            const insuranceExpired = !insurance?.expiry_date || new Date(insurance.expiry_date) < new Date()
+            return (
+              <div
+                key={c.id}
+                onClick={() => !insuranceExpired && setSelectedId(c.id)}
+                className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
+                  insuranceExpired
+                    ? 'border-red-100 bg-red-50/30 opacity-60 cursor-not-allowed'
+                    : selectedId === c.id
+                    ? 'border-primary-600 bg-blue-50/50 ring-1 ring-primary-600 cursor-pointer'
+                    : 'border-slate-200 hover:border-slate-300 cursor-pointer'
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900">{c.company_name || c.full_name}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{c.specialties?.join(', ') || 'General Contractor'}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  {insuranceExpired ? (
+                    <span className="text-xs font-medium text-red-600 bg-red-100 rounded-full px-2 py-0.5">
+                      Insurance Expired
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-xs text-slate-400">
+                        Exp: {new Date(insurance.expiry_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      </span>
+                      {selectedId === c.id && <span className="text-primary-600">✓</span>}
+                    </>
+                  )}
+                </div>
               </div>
-              {selectedId === c.id && <span className="text-primary-600">✓</span>}
-            </div>
-          ))}
+            )
+          })}
         </div>
         <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>

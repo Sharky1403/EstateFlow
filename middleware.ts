@@ -7,7 +7,7 @@ const ROLE_HOME: Record<string, string> = {
   contractor: '/contractor/work-orders',
 }
 
-const PUBLIC_PATHS = ['/login', '/register', '/verify', '/invite']
+const PUBLIC_PATHS = ['/login', '/register', '/verify', '/invite', '/forgot-password', '/reset-password', '/accept-invite']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -75,5 +75,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$).*)'],
 }

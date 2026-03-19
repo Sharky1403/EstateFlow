@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(taskkill:*)",
+      "Bash(del \"C:\\\\Users\\\\Administrator\\\\Desktop\\\\Projet\\\\EstateFlow\\\\app\\\\verify\\\\page.tsx\")"
+    ]
+  }
+}

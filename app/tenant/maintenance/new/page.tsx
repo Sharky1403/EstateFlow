@@ -15,6 +15,7 @@ const DRAFT_KEY = 'maintenance_draft'
 export default function NewTicketPage() {
   const router   = useRouter()
   const supabase = createClient()
+  const [urgency,      setUrgency]      = useState<'routine' | 'high' | 'emergency'>('routine')
   const [photoFile,    setPhotoFile]    = useState<File | null>(null)
   const [isOnline,     setIsOnline]     = useState(true)
   const [isRecording,  setIsRecording]  = useState(false)
@@ -33,10 +34,23 @@ export default function NewTicketPage() {
     if (draft) setValue('description', draft)
   }, [setValue])
 
-  // Online / offline tracking
+  // Online / offline tracking + auto-sync on reconnect
   useEffect(() => {
     setIsOnline(navigator.onLine)
-    const onOnline  = () => setIsOnline(true)
+
+    const onOnline = () => {
+      setIsOnline(true)
+      // Auto-submit if there's a saved draft waiting
+      const draft = localStorage.getItem(DRAFT_KEY)
+      if (draft && draft.length >= 10) {
+        setValue('description', draft)
+        // Small delay to let React update the form value before submitting
+        setTimeout(() => {
+          document.getElementById('maintenance-submit-btn')?.click()
+        }, 300)
+      }
+    }
+
     const onOffline = () => setIsOnline(false)
     window.addEventListener('online',  onOnline)
     window.addEventListener('offline', onOffline)
@@ -44,7 +58,7 @@ export default function NewTicketPage() {
       window.removeEventListener('online',  onOnline)
       window.removeEventListener('offline', onOffline)
     }
-  }, [])
+  }, [setValue])
 
   function saveDraft(val: string) { localStorage.setItem(DRAFT_KEY, val) }
 
@@ -124,6 +138,7 @@ export default function NewTicketPage() {
       description: data.description,
       photo_url,
       voice_note_url,
+      urgency,
       status: 'open',
     })
 
@@ -148,7 +163,7 @@ export default function NewTicketPage() {
             <line x1="1" y1="1" x2="23" y2="23"/>
           </svg>
           <p className="text-sm text-amber-700 font-medium">
-            You're offline. Your draft is saved — submit when you're back online.
+            You're offline. Draft saved — will submit automatically when connection is restored.
           </p>
         </div>
       )}
@@ -176,6 +191,33 @@ export default function NewTicketPage() {
                 <span className="shrink-0">⚠</span> {errors.description.message}
               </p>
             )}
+          </div>
+
+          {/* Priority */}
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-2">
+              Priority
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: 'routine',   label: 'Routine',   icon: '🔧', desc: 'Non-urgent',       active: 'border-slate-400 bg-slate-50 text-slate-700' },
+                { value: 'high',      label: 'High',      icon: '⚠️',  desc: 'Needs attention',  active: 'border-orange-400 bg-orange-50 text-orange-700' },
+                { value: 'emergency', label: 'Emergency', icon: '🚨', desc: 'Immediate danger',  active: 'border-red-500 bg-red-50 text-red-700' },
+              ] as const).map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setUrgency(opt.value)}
+                  className={`flex flex-col items-center gap-1 rounded-xl border-2 py-3 px-2 transition-all text-center ${
+                    urgency === opt.value ? opt.active + ' ring-1 ring-offset-1 ring-current' : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="text-xl">{opt.icon}</span>
+                  <span className="text-xs font-bold">{opt.label}</span>
+                  <span className="text-[10px] leading-tight opacity-70">{opt.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Voice recorder */}
@@ -273,6 +315,7 @@ export default function NewTicketPage() {
           </div>
 
           <Button
+            id="maintenance-submit-btn"
             type="submit"
             loading={isSubmitting}
             className="w-full"
@@ -280,7 +323,7 @@ export default function NewTicketPage() {
             size="lg"
             disabled={!isOnline}
           >
-            {isOnline ? 'Submit Request' : 'Connect to submit'}
+            {isOnline ? 'Submit Request' : 'Waiting for connection…'}
           </Button>
         </form>
       </div>

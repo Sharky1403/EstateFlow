@@ -24,18 +24,26 @@ export function NewUnitButton({ buildingId }: { buildingId: string }) {
     e.preventDefault()
     setLoading(true)
 
-    await supabase.from('units').insert({
+    const metadata: Record<string, unknown> = {}
+    if (form.beds)  metadata.beds      = Number(form.beds)
+    if (form.baths) metadata.baths     = Number(form.baths)
+    if (form.sqft)  metadata.sq_ft     = Number(form.sqft)
+
+    const { error } = await supabase.from('units').insert({
       building_id: buildingId,
       unit_number: form.unit_number,
       market_rent: Number(form.market_rent) || 0,
-      actual_rent: Number(form.market_rent) || 0, // Default to market rent initially
-      beds: Number(form.beds) || null,
-      baths: Number(form.baths) || null,
-      sqft: Number(form.sqft) || null,
+      actual_rent: Number(form.market_rent) || 0,
       occupied: false,
+      metadata,
     })
 
     setLoading(false)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    setForm({ unit_number: '', market_rent: '', beds: '', baths: '', sqft: '' })
     setOpen(false)
     router.refresh()
   }
