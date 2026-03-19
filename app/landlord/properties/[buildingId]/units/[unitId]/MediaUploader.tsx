@@ -1,8 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { useRouter } from 'next/navigation'
 
 export function MediaUploader({ buildingId, unitId, currentPhotos }: {
@@ -14,28 +12,40 @@ export function MediaUploader({ buildingId, unitId, currentPhotos }: {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [images, setImages] = useState<string[]>(currentPhotos)
+  const [error, setError] = useState('')
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return
     setUploading(true)
+    setError('')
 
     const newImageUrls = [...images]
     for (const file of Array.from(e.target.files)) {
       const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random()}.${fileExt}`
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`
       const filePath = `units/${unitId}/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from('property_media')
         .upload(filePath, file)
 
-      if (!uploadError) {
-        const { data } = supabase.storage.from('property_media').getPublicUrl(filePath)
-        newImageUrls.push(data.publicUrl)
+      if (uploadError) {
+        setError(`Upload failed: ${uploadError.message}`)
+        setUploading(false)
+        return
       }
+
+      const { data } = supabase.storage.from('property_media').getPublicUrl(filePath)
+      newImageUrls.push(data.publicUrl)
     }
 
-    await supabase.from('units').update({ photos: newImageUrls }).eq('id', unitId)
+    const { error: dbError } = await supabase.from('units').update({ photos: newImageUrls }).eq('id', unitId)
+    if (dbError) {
+      setError(`Save failed: ${dbError.message}`)
+      setUploading(false)
+      return
+    }
+
     setImages(newImageUrls)
     setUploading(false)
     router.refresh()
@@ -49,7 +59,7 @@ export function MediaUploader({ buildingId, unitId, currentPhotos }: {
   }
 
   return (
-    <Card padding="md">
+    <div className="space-y-3">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-slate-800">Unit Photos</h3>
         <label className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-500 hover:border-primary-600 hover:text-primary-600 transition-colors bg-slate-50">
@@ -57,6 +67,10 @@ export function MediaUploader({ buildingId, unitId, currentPhotos }: {
           <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} disabled={uploading} />
         </label>
       </div>
+
+      {error && (
+        <p className="text-xs text-red-500 font-medium">{error}</p>
+      )}
 
       {images.length === 0 ? (
         <div className="py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
@@ -77,6 +91,6 @@ export function MediaUploader({ buildingId, unitId, currentPhotos }: {
           ))}
         </div>
       )}
-    </Card>
+    </div>
   )
 }

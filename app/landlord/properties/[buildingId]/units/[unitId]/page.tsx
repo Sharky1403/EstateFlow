@@ -26,7 +26,7 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ bui
     .eq('status', 'active')
     .single()
 
-  const { data: mediaFiles } = await supabase.storage.from('unit-media').list(resolvedParams.unitId)
+
 
   const revenueLoss = unit ? (unit.market_rent - unit.actual_rent) * 12 : 0
 
@@ -151,7 +151,7 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ bui
 
       <Card>
         <h2 className="font-semibold mb-4">Media Gallery</h2>
-        <MediaUploader buildingId={resolvedParams.buildingId} unitId={resolvedParams.unitId} currentPhotos={[]} />
+        <MediaUploader buildingId={resolvedParams.buildingId} unitId={resolvedParams.unitId} currentPhotos={unit?.photos ?? []} />
       </Card>
     </div>
   )
