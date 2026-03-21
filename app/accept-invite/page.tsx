@@ -52,11 +52,12 @@ export default function AcceptInvitePage() {
         .single()
 
       if (existingProfile) {
-        // Existing user — update unit assignment and redirect to their dashboard
-        if (meta.unit_id) {
-          await supabase.from('profiles').update({ invited_unit_id: meta.unit_id }).eq('id', user.id)
-        }
-        redirectByRole(existingProfile.role)
+        // Existing user — update role and unit assignment, redirect to invited role
+        await supabase.from('profiles').update({
+          role: meta.role ?? existingProfile.role,
+          ...(meta.unit_id ? { invited_unit_id: meta.unit_id } : {}),
+        }).eq('id', user.id)
+        redirectByRole(meta.role ?? existingProfile.role)
         return
       }
 
