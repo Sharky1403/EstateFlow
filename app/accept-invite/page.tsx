@@ -43,12 +43,30 @@ export default function AcceptInvitePage() {
 
     async function createProfileAndRedirect(supabase: any, user: any) {
       const meta = user.user_metadata ?? {}
-      await supabase.from('profiles').upsert({
+
+      // Check if a profile already exists (existing user)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('id', user.id)
+        .single()
+
+      if (existingProfile) {
+        // Existing user — update unit assignment and redirect to their dashboard
+        if (meta.unit_id) {
+          await supabase.from('profiles').update({ invited_unit_id: meta.unit_id }).eq('id', user.id)
+        }
+        redirectByRole(existingProfile.role)
+        return
+      }
+
+      // New user — create profile and go to password setup
+      await supabase.from('profiles').insert({
         id: user.id,
         role: meta.role ?? 'tenant',
         full_name: meta.full_name ?? user.email ?? '',
         ...(meta.unit_id ? { invited_unit_id: meta.unit_id } : {}),
-      }, { onConflict: 'id' })
+      })
       window.location.href = '/reset-password?new_account=1'
     }
 
