@@ -29,16 +29,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
 
-      // Update existing user's metadata and profile for the new unit
-      await supabase.auth.admin.updateUserById(linkData.user.id, {
-        user_metadata: { role: 'tenant', full_name, unit_id },
-      })
-      await supabase.from('profiles').upsert({
-        id: linkData.user.id,
-        role: 'tenant',
-        full_name,
-        invited_unit_id: unit_id,
-      }, { onConflict: 'id' })
+      // Only update the unit assignment — never overwrite the existing user's role
+      await supabase.from('profiles')
+        .update({ invited_unit_id: unit_id })
+        .eq('id', linkData.user.id)
 
       const actionLink = linkData.properties?.action_link
       if (actionLink) {
