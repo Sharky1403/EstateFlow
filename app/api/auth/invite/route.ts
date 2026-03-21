@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@supabase/supabase-js'
 import { sendSMS } from '@/lib/twilio'
 import { NextResponse } from 'next/server'
 
@@ -14,8 +15,9 @@ export async function POST(req: Request) {
   })
 
   if (error) {
-    // User already exists — generate a magic link instead
+    // User already exists — send them a magic link email via Supabase
     if (error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered')) {
+      // Get the existing user to update their profile
       const { data: linkData } = await supabase.auth.admin.generateLink({
         type: 'magiclink',
         email,
@@ -36,6 +38,16 @@ export async function POST(req: Request) {
         full_name,
         invited_unit_id: unit_id,
       }, { onConflict: 'id' })
+
+      // Send magic link email using the public client (triggers Supabase email)
+      const supabasePublic = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      await supabasePublic.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false, emailRedirectTo: `${appUrl}/accept-invite` },
+      })
 
       if (phone && linkData.properties?.action_link) {
         await sendSMS(phone, `You've been added as a tenant on EstateFlow. Sign in here: ${linkData.properties.action_link}`)
