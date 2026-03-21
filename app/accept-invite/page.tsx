@@ -52,12 +52,9 @@ export default function AcceptInvitePage() {
         .single()
 
       if (existingProfile) {
-        // Existing user — update role and unit assignment, redirect to invited role
-        await supabase.from('profiles').update({
-          role: meta.role ?? existingProfile.role,
-          ...(meta.unit_id ? { invited_unit_id: meta.unit_id } : {}),
-        }).eq('id', user.id)
-        redirectByRole(meta.role ?? existingProfile.role)
+        // The invite route already updated the DB profile (role + invited_unit_id).
+        // Trust the DB role — do NOT override with JWT metadata which may still carry the old role.
+        redirectByRole(existingProfile.role)
         return
       }
 
