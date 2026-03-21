@@ -12,6 +12,8 @@ export default function AcceptInvitePage() {
       const code = searchParams.get('code')
 
       if (code) {
+        // Sign out any existing session so it doesn't interfere with the invited user's session
+        await supabase.auth.signOut()
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
         if (error || !data.user) { window.location.href = '/login'; return }
         await createProfileAndRedirect(supabase, data.user)
@@ -25,6 +27,7 @@ export default function AcceptInvitePage() {
       const refreshToken = hashParams.get('refresh_token')
 
       if (accessToken && refreshToken) {
+        await supabase.auth.signOut()
         const { data, error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
         if (error || !data.user) { window.location.href = '/login'; return }
         await createProfileAndRedirect(supabase, data.user)

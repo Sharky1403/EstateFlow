@@ -29,9 +29,20 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
 
-      // Only update the unit assignment — never overwrite the existing user's role
+      // Check if user owns buildings (real landlord — don't downgrade them)
+      const { count } = await supabase
+        .from('buildings')
+        .select('id', { count: 'exact', head: true })
+        .eq('landlord_id', linkData.user.id)
+
+      const ownsBuildings = (count ?? 0) > 0
+
       await supabase.from('profiles')
-        .update({ invited_unit_id: unit_id })
+        .update({
+          invited_unit_id: unit_id,
+          // Only set role to tenant if they don't own buildings
+          ...(!ownsBuildings ? { role: 'tenant', full_name } : {}),
+        })
         .eq('id', linkData.user.id)
 
       const actionLink = linkData.properties?.action_link
