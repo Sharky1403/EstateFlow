@@ -54,26 +54,18 @@ export default function AcceptInvitePage() {
         .eq('id', user.id)
         .single()
 
-      if (existingProfile) {
-        // If invited_unit_id is set, this user was invited as a tenant — always go to tenant dashboard
-        // regardless of their primary role (handles landlords who are also tenants elsewhere).
-        if (existingProfile.invited_unit_id) {
-          window.location.href = '/tenant/dashboard'
-          return
-        }
-        // The invite route already updated the DB profile (role + invited_unit_id).
-        // Trust the DB role — do NOT override with JWT metadata which may still carry the old role.
-        redirectByRole(existingProfile.role)
-        return
+      // Ensure profile exists (may have been pre-created by the invite route)
+      if (!existingProfile) {
+        await supabase.from('profiles').insert({
+          id: user.id,
+          role: meta.role ?? 'tenant',
+          full_name: meta.full_name ?? user.email ?? '',
+          ...(meta.unit_id ? { invited_unit_id: meta.unit_id } : {}),
+        })
       }
 
-      // New user — create profile and go to password setup
-      await supabase.from('profiles').insert({
-        id: user.id,
-        role: meta.role ?? 'tenant',
-        full_name: meta.full_name ?? user.email ?? '',
-        ...(meta.unit_id ? { invited_unit_id: meta.unit_id } : {}),
-      })
+      // Anyone arriving via an invite link must set their password —
+      // existing users get the login link instead and never reach this page.
       window.location.href = '/reset-password?new_account=1'
     }
 
