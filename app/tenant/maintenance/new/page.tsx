@@ -132,7 +132,7 @@ export default function NewTicketPage() {
       }
     }
 
-    await supabase.from('maintenance_tickets').insert({
+    const { data: ticket } = await supabase.from('maintenance_tickets').insert({
       tenant_id: user!.id,
       unit_id: lease?.unit_id,
       description: data.description,
@@ -140,7 +140,16 @@ export default function NewTicketPage() {
       voice_note_url,
       urgency,
       status: 'open',
-    })
+    }).select('id').single()
+
+    // Run AI triage in background — updates urgency + category automatically
+    if (ticket?.id) {
+      fetch('/api/maintenance/triage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: ticket.id, description: data.description }),
+      }).catch(() => {}) // fire-and-forget, non-blocking
+    }
 
     localStorage.removeItem(DRAFT_KEY)
     router.push('/tenant/maintenance')

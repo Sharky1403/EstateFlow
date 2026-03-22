@@ -17,8 +17,8 @@ export async function triageMaintenanceTicket(
       },
       {
         role: 'user',
-        content: `Classify this maintenance issue: "${description}". 
-        Return JSON: { "urgency": "emergency" | "routine", "category": "plumbing" | "electrical" | "hvac" | "other" }`,
+        content: `Classify this maintenance issue: "${description}".
+        Return JSON: { "urgency": "emergency" | "high" | "routine", "category": "plumbing" | "electrical" | "hvac" | "other" }`,
       },
     ],
     response_format: { type: 'json_object' },
