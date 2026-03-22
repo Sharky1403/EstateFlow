@@ -50,11 +50,17 @@ export default function AcceptInvitePage() {
       // Check if a profile already exists (existing user)
       const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('id, role')
+        .select('id, role, invited_unit_id')
         .eq('id', user.id)
         .single()
 
       if (existingProfile) {
+        // If invited_unit_id is set, this user was invited as a tenant — always go to tenant dashboard
+        // regardless of their primary role (handles landlords who are also tenants elsewhere).
+        if (existingProfile.invited_unit_id) {
+          window.location.href = '/tenant/dashboard'
+          return
+        }
         // The invite route already updated the DB profile (role + invited_unit_id).
         // Trust the DB role — do NOT override with JWT metadata which may still carry the old role.
         redirectByRole(existingProfile.role)

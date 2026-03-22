@@ -1,12 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { type NextRequest } from 'next/server'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient()
   await supabase.auth.signOut()
 
-  const response = NextResponse.redirect(
-    new URL('/login', process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
-  )
-  return response
+  return NextResponse.redirect(new URL('/login', request.url))
 }

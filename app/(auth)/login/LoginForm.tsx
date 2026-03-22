@@ -29,12 +29,15 @@ export function LoginForm() {
     if (data.session && data.user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, invited_unit_id')
         .eq('id', data.user.id)
         .single()
 
       if (profile?.role === 'landlord') window.location.href = '/landlord/dashboard'
-      else if (profile?.role === 'tenant') window.location.href = '/tenant/dashboard'
+      else if (profile?.role === 'tenant') {
+        // If they were invited to a unit, send them to their application page
+        window.location.href = profile.invited_unit_id ? '/tenant/application' : '/tenant/dashboard'
+      }
       else if (profile?.role === 'contractor') window.location.href = '/contractor/work-orders'
       else setError('No active role found.')
     }

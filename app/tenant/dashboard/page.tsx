@@ -9,9 +9,13 @@ export default async function TenantDashboard() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('full_name, invited_unit_id')
     .eq('id', user!.id)
     .single()
+
+  const { data: invitedUnit } = profile?.invited_unit_id
+    ? await supabase.from('units').select('unit_number, buildings(name, address)').eq('id', profile.invited_unit_id).single()
+    : { data: null }
 
   const { data: lease } = await supabase
     .from('leases')
@@ -119,6 +123,23 @@ export default async function TenantDashboard() {
             </Link>
           </div>
         </div>
+      ) : invitedUnit ? (
+        <Link href="/tenant/application" className="block bg-white rounded-2xl border border-blue-200 shadow-card p-5 hover:border-blue-400 transition-colors">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl shrink-0">🏠</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-blue-500 uppercase tracking-wider mb-0.5">Invited Unit</p>
+              <p className="text-slate-800 font-semibold text-sm">Unit {(invitedUnit as any).unit_number} — {(invitedUnit as any).buildings?.name}</p>
+              <p className="text-slate-400 text-xs truncate">{(invitedUnit as any).buildings?.address}</p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+          <div className="mt-3 bg-blue-50 rounded-xl px-3 py-2 text-xs text-blue-700 font-medium">
+            Complete your application →
+          </div>
+        </Link>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-6 text-center">
           <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl mx-auto mb-3">🏠</div>

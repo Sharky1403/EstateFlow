@@ -17,56 +17,44 @@ export async function POST(req: Request) {
   })
 
   if (error) {
-    // User already exists — generate a magic link and send it via Resend
+    // User already exists — update their profile and send a plain login link
     if (error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered')) {
+      // Use generateLink only to resolve the user ID; we won't send the magic link itself
       const { data: linkData } = await supabase.auth.admin.generateLink({
         type: 'magiclink',
         email,
-        options: { redirectTo: `${appUrl}/accept-invite` },
+        options: { redirectTo: `${appUrl}/login` },
       })
 
       if (!linkData?.user) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
 
-      // Check if user owns buildings (real landlord — don't downgrade them)
-      const { count } = await supabase
-        .from('buildings')
-        .select('id', { count: 'exact', head: true })
-        .eq('landlord_id', linkData.user.id)
-
-      const ownsBuildings = (count ?? 0) > 0
-
+      // Always set role to tenant and record the invited unit
       await supabase.from('profiles')
-        .update({
-          invited_unit_id: unit_id,
-          // Only set role to tenant if they don't own buildings
-          ...(!ownsBuildings ? { role: 'tenant', full_name } : {}),
-        })
+        .update({ invited_unit_id: unit_id, role: 'tenant', full_name })
         .eq('id', linkData.user.id)
 
-      const actionLink = linkData.properties?.action_link
-      if (actionLink) {
-        // Send invite email via Resend
-        await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL ?? 'EstateFlow <onboarding@resend.dev>',
-          to: email,
-          subject: "You've been invited to EstateFlow",
-          html: `
-            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-              <h2 style="margin:0 0 8px">You've been invited to EstateFlow</h2>
-              <p style="color:#555;margin:0 0 24px">Hi ${full_name}, your landlord has added you as a tenant. Click the button below to access your account.</p>
-              <a href="${actionLink}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600">
-                Access My Account
-              </a>
-              <p style="color:#999;font-size:12px;margin-top:24px">This link expires in 24 hours.</p>
-            </div>
-          `,
-        })
+      // Link goes to /api/auth/logout which signs out any current session then redirects to /login
+      const inviteLink = `${appUrl}/api/auth/logout`
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL ?? 'EstateFlow <onboarding@resend.dev>',
+        to: email,
+        subject: "You've been invited to EstateFlow",
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+            <h2 style="margin:0 0 8px">You've been invited to EstateFlow</h2>
+            <p style="color:#555;margin:0 0 24px">Hi ${full_name}, your landlord has added you as a tenant. Sign in to view your unit and complete your application.</p>
+            <a href="${inviteLink}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600">
+              Sign In to My Account
+            </a>
+            <p style="color:#999;font-size:12px;margin-top:24px">Sign in with your existing EstateFlow credentials.</p>
+          </div>
+        `,
+      })
 
-        if (phone) {
-          await sendSMS(phone, `You've been added as a tenant on EstateFlow. Access your account here: ${actionLink}`)
-        }
+      if (phone) {
+        await sendSMS(phone, `You've been added as a tenant on EstateFlow. Sign in here: ${inviteLink}`)
       }
 
       return NextResponse.json({ success: true })

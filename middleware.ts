@@ -55,14 +55,14 @@ export async function middleware(request: NextRequest) {
   if (user && (pathname.startsWith('/landlord') || pathname.startsWith('/tenant') || pathname.startsWith('/contractor'))) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, invited_unit_id')
       .eq('id', user.id)
       .single()
 
     const role = profile?.role ?? ''
     const allowed =
       (pathname.startsWith('/landlord')   && role === 'landlord') ||
-      (pathname.startsWith('/tenant')     && role === 'tenant')   ||
+      (pathname.startsWith('/tenant')     && (role === 'tenant' || !!profile?.invited_unit_id)) ||
       (pathname.startsWith('/contractor') && role === 'contractor')
 
     if (!allowed) {
