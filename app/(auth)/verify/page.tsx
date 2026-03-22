@@ -31,9 +31,11 @@ export default function VerifyPage() {
       .from('identity-docs')
       .getPublicUrl(filePath)
 
-    await supabase.from('profiles')
+    const { error: dbError } = await supabase.from('profiles')
       .update({ id_document_url: urlData.publicUrl })
       .eq('id', user.id)
+
+    if (dbError) { setError(dbError.message); setLoading(false); return }
 
     setUploaded(true)
     setLoading(false)
@@ -53,8 +55,8 @@ export default function VerifyPage() {
             <p className="text-slate-500 text-sm mt-2 mb-6">
               Your document has been uploaded. Your landlord will review it shortly.
             </p>
-            <Button className="w-full" variant="gradient" size="lg" onClick={() => router.push('/tenant/dashboard')}>
-              Go to Dashboard
+            <Button className="w-full" variant="gradient" size="lg" onClick={() => router.push('/tenant/application')}>
+              View My Application
             </Button>
           </div>
         </div>
