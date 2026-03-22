@@ -2,15 +2,12 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
-import { useRouter } from 'next/navigation'
 
 export default function VerifyPage() {
   const supabase = createClient()
-  const router   = useRouter()
-  const [file,     setFile]     = useState<File | null>(null)
-  const [loading,  setLoading]  = useState(false)
-  const [uploaded, setUploaded] = useState(false)
-  const [error,    setError]    = useState('')
+  const [file,    setFile]    = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
 
   async function handleUpload() {
     if (!file) return
@@ -37,32 +34,12 @@ export default function VerifyPage() {
 
     if (dbError) { setError(dbError.message); setLoading(false); return }
 
-    setUploaded(true)
-    setLoading(false)
+    // Full reload so the server component on /tenant/application fetches fresh data
+    window.location.href = '/tenant/application'
   }
 
   const cardClass = 'bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.4)] p-8 border border-white/20 w-full max-w-md'
 
-  if (uploaded) {
-    return (
-      <div className="animate-scale-in">
-        <div className={cardClass}>
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-3xl mx-auto mb-5 border border-emerald-100">
-              ✅
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Identity Submitted</h2>
-            <p className="text-slate-500 text-sm mt-2 mb-6">
-              Your document has been uploaded. Your landlord will review it shortly.
-            </p>
-            <Button className="w-full" variant="gradient" size="lg" onClick={() => router.push('/tenant/application')}>
-              View My Application
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="animate-scale-in p-6">
@@ -141,7 +118,7 @@ export default function VerifyPage() {
           </Button>
 
           <button
-            onClick={() => router.push('/tenant/dashboard')}
+            onClick={() => { window.location.href = '/tenant/dashboard' }}
             className="w-full text-sm text-slate-400 hover:text-slate-600 transition-colors py-1"
           >
             Skip for now
